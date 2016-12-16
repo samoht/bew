@@ -9,3 +9,5 @@ opam pin add jsont https://github.com/dbuenzli/jsonc.git
 opam install webbrowser
 make client
 ```
+
+Browse the generated website [here](https://samoht.github.io/bew/).
