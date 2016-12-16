@@ -11,6 +11,7 @@ server:
 client:
 	jbuilder client.install
 	jbuilder client/client.js
+	cp _build/default/client/client.js docs/
 	browse docs/index.html
 
 clean:
