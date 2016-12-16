@@ -1,11 +1,11 @@
-(library
- ((name        client)
-  (public_name client)
-  (libraries (ocaml-vdom jsont.jsoo))
-  (wrapped false)
-  (preprocess no_preprocessing)))
+(executables
+ ((names (client))
+  (libraries   (gen_js_api ocaml-vdom jsont.jsoo))
+  (flags (:standard -no-check-prims))
+  (preprocess  no_preprocessing)
+))
 
 (rule
   ((targets (client.js))
-   (deps (client.byte))
-   (action "js_of_ocaml --source-map --source-map-inline +gen_js_api/ojs_runtime.js client.byte -o client.js")))
+   (deps (client.bc))
+   (action "js_of_ocaml --source-map --source-map-inline +gen_js_api/ojs_runtime.js client.bc -o client.js")))
