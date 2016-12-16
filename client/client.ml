@@ -102,6 +102,13 @@ type model = {
 
 let init = return { likes = 0; dislikes = 0; elts = `Nothing  }
 
+type msg = [
+  | `Like
+  | `Dislike
+  | `Fetch
+  | `Fetched of string
+]
+
 let update t = function
   | `Like    -> return { t with likes = t.likes + 1 }
   | `Dislike -> return { t with dislikes = t.dislikes + 1 }
@@ -114,8 +121,12 @@ let update t = function
     let posts = Posts.of_str json in
     return { t with elts = `Data posts }
 
-let view t =
+let view t: msg Vdom.vdom =
   let loading = match t.elts with `Loading -> true | _ -> false in
+  let icon = match t.elts with
+    | `Loading | `Nothing -> Icon.v `Users
+    | `Data l  -> text (string_of_int (List.length l) ^ " posts")
+  in
   let posts = match t.elts with
     | `Nothing | `Loading -> []
     | `Data p -> p
@@ -128,12 +139,15 @@ let view t =
         ~align:`Left
         ~label:(Button.Label.v ~color:`Red ~pointing:`Left likes)
         (Button.v `Like ~color:`Red @@ Icon.v `Heart);
+
       Button.labeled
         ~align:`Left
         ~label:(Button.Label.v ~color:`Blue ~pointing:`Left dislikes)
         (Button.v `Dislike ~color:`Blue ~basic:true ~hidden:(Icon.v `Cloud)
          @@ Icon.v `Fork);
-      Button.v `Fetch ~basic:true ~loading (Icon.v `Facebook);
+
+      Button.v `Fetch ~basic:true ~loading icon;
+
       Container.v ~a:[`Left] [
         Feed.v (List.map (fun x ->
             let open Feed in

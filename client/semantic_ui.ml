@@ -11,11 +11,36 @@ let img src = elt "img" ~a:[str_prop "src" src] []
 
 module Color = struct
 
-  type t = [ `Red | `Blue ]
+  type t = [
+    | `Red
+    | `Orange
+    | `Yellow
+    | `Olive
+    | `Green
+    | `Teal
+    | `Blue
+    | `Violet
+    | `Purple
+    | `Pink
+    | `Brown
+    | `Grey
+    | `Black
+  ]
 
   let str: t -> string = function
-    | `Red  -> "red"
-    | `Blue -> "blue"
+    | `Red    -> "red"
+    | `Orange -> "orange"
+    | `Yellow -> "yellow"
+    | `Olive  -> "olive"
+    | `Green  -> "green"
+    | `Teal   -> "teal"
+    | `Blue   -> "blue"
+    | `Violet -> "violet"
+    | `Purple -> "purple"
+    | `Pink   -> "pink"
+    | `Brown  -> "brown"
+    | `Grey   -> "grey"
+    | `Black  -> "black"
 
 end
 
@@ -53,22 +78,29 @@ module Icon = struct
     | `Next
     | `Pause
     | `Shop
+    | `Users
+    | `Colored of Color.t * t
+    | `Inverted of t
     | Social.t
   ]
 
-  let str: t -> string = function
+  let rec str: t -> string = function
     | `Arrow `Right -> "right arrow"
     | `Arrow `Left  -> "left arrow"
     | `Cloud -> "cloud"
     | `Fork  -> "fork"
     | `Like  -> "like"
-    | `Heart -> "earth"
+    | `Heart -> "heart"
     | `Next  -> "next"
     | `Pause -> "pause"
     | `Shop  -> "shop"
+    | `Users -> "users"
+    | `Colored (c, t) -> Color.str c ^ " " ^ str t
+    | `Inverted t -> "inverted " ^ str t
     | #Social.t as s -> Social.str s
 
   let v t = elt "i" ~a:[class_ (list "icon" [str t])] []
+  let circular t = elt "i" ~a:[class_ (list "circular icon" [str t])] []
 
 end
 
@@ -78,7 +110,7 @@ module Like = struct
   let v n = elt "a" ~a:[class_ "like"] [
       Icon.v `Like;
       text (string_of_int n);
-      text (if n > 1 then "Likes" else "Like");
+      text (if n > 1 then " Likes" else " Like");
     ]
 end
 
@@ -130,10 +162,10 @@ module Button = struct
     let v ?color ?pointing body =
       let color = color ++ Color.str in
       let pointing = pointing ++ function
-          | `Left  -> "pointing left"
-          | `Right -> "pointing right"
+          | `Left  -> "left pointing"
+          | `Right -> "right pointing"
       in
-      elt "a" ~a:[class_ (list "ui basic" (color @ pointing))] [body]
+      elt "a" ~a:[class_ (list "ui basic label" (color @ pointing))] [body]
 
   end
 
@@ -204,6 +236,7 @@ module Feed = struct
   let summary { user; action; date } =
     div ~a:[class_ "summary"] [
       elt "a" ~a:[class_ "user"] [user];
+      text " ";
       text action;
       div ~a:[class_ "date"] [text date];
     ]
@@ -226,7 +259,7 @@ module Feed = struct
     in
     div ~a:[class_ "event"] [
       div ~a:[class_ "label"] [t.label];
-      div ~a:[class_ "contents"] (summary t.summary :: text)
+      div ~a:[class_ "content"] (summary t.summary :: text)
     ]
 
   let v events = div ~a:[class_ "ui feed"] (List.map event events)
