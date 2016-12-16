@@ -1,0 +1,6 @@
+(library
+ ((name        server)
+  (public_name server)
+  (libraries (websocket.lwt))
+  (wrapped false)
+  (preprocess no_preprocessing)))

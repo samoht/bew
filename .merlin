@@ -1,0 +1,4 @@
+PKG ocaml-vdom websocket ezjsonm jsont.jsoo
+S client/
+S server/
+B _build/*
