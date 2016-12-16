@@ -11,7 +11,7 @@ server:
 client:
 	jbuilder client.install
 	jbuilder client/client.js
-	browse index.html
+	browse docs/index.html
 
 clean:
 	rm -rf _build
