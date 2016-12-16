@@ -123,9 +123,9 @@ let update t = function
 
 let view t: msg Vdom.vdom =
   let loading = match t.elts with `Loading -> true | _ -> false in
-  let icon = match t.elts with
-    | `Loading | `Nothing -> Icon.v `Users
-    | `Data l  -> text (string_of_int (List.length l) ^ " posts")
+  let fetch = match t.elts with
+    | `Loading | `Nothing -> [Icon.v `Users; text "Fetch"]
+    | `Data l  -> [text (string_of_int (List.length l) ^ " posts")]
   in
   let posts = match t.elts with
     | `Nothing | `Loading -> []
@@ -133,39 +133,45 @@ let view t: msg Vdom.vdom =
   in
   let likes = text (string_of_int t.likes) in
   let dislikes = text (string_of_int t.dislikes) in
-  let row =
-    div [
+  Container.v [
+
+    Container.v ~a:[`Center] [
       Button.labeled
         ~align:`Left
         ~label:(Button.Label.v ~color:`Red ~pointing:`Left likes)
-        (Button.v `Like ~color:`Red @@ Icon.v `Heart);
+        (Button.v `Like ~color:`Red [Icon.v `Heart]);
 
       Button.labeled
         ~align:`Left
         ~label:(Button.Label.v ~color:`Blue ~pointing:`Left dislikes)
-        (Button.v `Dislike ~color:`Blue ~basic:true ~hidden:(Icon.v `Cloud)
-         @@ Icon.v `Fork);
+        (Button.v `Dislike ~color:`Blue ~basic:true
+           ~hidden:[Icon.v `Cloud]
+           [Icon.v `Fork]);
+    ];
 
-      Button.v `Fetch ~basic:true ~loading icon;
+    Container.v ~a:[`Center] [
+      Statistic.v
+        ~value:[text (string_of_int (t.likes - t.dislikes))]
+        ~label:[text "likes"];
+    ];
 
-      Container.v ~a:[`Left] [
-        Feed.v (List.map (fun x ->
-            let open Feed in
-            { label = img "http://semantic-ui.com/images/avatar/small/justen.jpg"
-            ; summary =
-                { user   = text x.Post.author
-                ; action = "posted on reddit"
-                ; date   = "3 days ago" }
-            ; text = [text x.Post.title]
-            ; meta = Like.v (Random.int 10) }
-          ) posts);
-      ]
-    ]
-  in
-  div [
-    div ~a:[class_ "ui container"] [
-      div ~a:[class_ "value"] [text (string_of_int (t.likes - t.dislikes))];
-      div ~a:[class_ "label"] [row]
+    div ~a:[class_ "ui horizontal divider"] [text "r/ocaml"];
+
+    Container.v ~a:[`Center] [
+      Button.v `Fetch ~basic:true ~loading fetch;
+    ];
+
+    Container.v ~a:[`Text] [
+      Feed.v (List.map (fun x ->
+          let open Feed in
+          { label = img "http://semantic-ui.com/images/avatar/small/justen.jpg"
+          ; summary =
+              { user   = text x.Post.author
+              ; action = "posted on reddit"
+              ; date   = "3 days ago" }
+          ; text = [text x.Post.title]
+          ; meta = Like.v (Random.int 10) }
+        ) posts);
     ]
   ]
 

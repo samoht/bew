@@ -114,6 +114,16 @@ module Like = struct
     ]
 end
 
+module Statistic = struct
+
+  let v ~value ~label =
+    div ~a:[class_ "ui statistic"] [
+      div ~a:[class_ "value"] value;
+      div ~a:[class_ "label"] label;
+    ]
+
+end
+
 module Button = struct
 
   type kind = [
@@ -146,10 +156,10 @@ module Button = struct
     let loading = if loading then ["loading"] else [] in
     let state = state ++ state_str in
     let body = match hidden with
-      | None        -> [body]
+      | None        -> body
       | Some hidden ->
-        [div ~a:[class_ "visible content"] [body];
-         div ~a:[class_ "hidden content"] [hidden]]
+        [div ~a:[class_ "visible content"] body;
+         div ~a:[class_ "hidden content"] hidden]
     in
     let all = animated @ color @ basic @ kind @ loading @ state in
     elt "button" ~a:[class_ (list "ui button" all);
