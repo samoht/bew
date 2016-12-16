@@ -1,8 +1,9 @@
-;;(executables
-;; ((names (client))
-;;  (libraries   (gen_js_api ocaml-vdom))
-;;  (preprocess  no_preprocessing)
-;;))
+(library
+ ((name        client)
+  (public_name client)
+  (libraries (ocaml-vdom jsont.jsoo))
+  (wrapped false)
+  (preprocess no_preprocessing)))
 
 (rule
   ((targets (client.js))

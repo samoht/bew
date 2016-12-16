@@ -1,44 +1,5 @@
 open Vdom
-
-(** Components *)
-
-module Button = struct
-
-  type color = [ `Red | `Blue ]
-  type icon = [ `Heart | `Fork ]
-
-  let color = function `Red -> "red" | `Blue -> "blue"
-  let icon = function `Heart -> "earth" | `Fork -> "fork"
-
-  let labeled c i left right msg =
-    div ~a:[class_ "ui labeled button"; str_prop "tabindex" "0"] [
-      div ~a:[class_ ("ui button " ^ color c); onclick msg] [
-        elt "i" ~a:[class_ ("icon " ^ icon i)] [];
-        text left
-      ];
-      elt "a" ~a:[class_ ("ui basic left pointing label " ^ color c)]
-        [text right]
-    ]
-
-end
-
-module Comment = struct
-
-  let v ?(avatar="/images/avatar/small/stevie.jpg") ~author body =
-    div ~a:[class_ "ui comments"] [
-      div ~a:[class_ "comment"] [
-        elt "a" ~a:[class_ "avatar"] [
-          elt "img" ~a:[str_prop "src" avatar] [];
-        ];
-        div ~a:[class_ "content"] [
-          elt "a" ~a:[class_ "author"] [text author];
-        ];
-        div ~a:[class_ "text"] body;
-      ]
-    ]
-
-end
-
+open Semantic_ui
 
 module XHR = struct
 
@@ -82,7 +43,7 @@ module Post = struct
   let t =
     let o = Jsont.objc ~kind:"post" () in
     let title = Jsont.(mem o "title" string) in
-    let author = Jsont.(mem o "title" string) in
+    let author = Jsont.(mem o "author" string) in
     let c = Jsont.obj ~seal:true o in
     let dec o = `Ok { author = Jsont.get author o; title = Jsont.get title o } in
     let enc t = Jsont.(new_obj c [memv author t.author; memv title t.title]) in
@@ -114,19 +75,22 @@ module Posts = struct
     let o = Jsont.objc ~kind:"data" () in
     let children = Jsont.(mem o "children" a) in
     let c = Jsont.obj ~seal:true o in
-    let dec o = `Ok { children = [] (*Jsont.get children o*) } in
+    let dec o = `Ok { children = Jsont.get children o } in
     let enc t = Jsont.(new_obj c [memv children t.children]) in
     Jsont.view (dec, enc) c
 
-  let reddit = data (children (Jsont.array Post.t))
+  let reddit = data (children (Jsont.array (data Post.t)))
 
   let of_str s =
     let e = Jsont_codec.decoder (Js.string s) in
     let e = Jsont.decoder ~loc:true e reddit in
     match Jsont.decode e with
-    | `Ok (_, v)    -> v.data.children
+    | `Ok (_, v)    -> List.map (fun {data} -> data) v.data.children
     | `Await        -> assert false
-    | `Error (_, e) -> invalid_arg (Jsont.error_to_string e)
+    | `Error (_, e) ->
+      let err = Jsont.error_to_string e in
+      Printf.printf "%s\n" err;
+      invalid_arg err
 
 end
 
@@ -151,29 +115,41 @@ let update t = function
     return { t with elts = `Data posts }
 
 let view t =
-  let icon = match t.elts with
-    | `Nothing -> ""
-    | `Loading -> "loading"
-    | `Data _  -> ""
-  in
+  let loading = match t.elts with `Loading -> true | _ -> false in
   let posts = match t.elts with
     | `Nothing | `Loading -> []
     | `Data p -> p
   in
+  let likes = text (string_of_int t.likes) in
+  let dislikes = text (string_of_int t.dislikes) in
   let row =
     div [
-      Button.labeled `Red `Heart "YES" (string_of_int t.likes) `Like;
-      Button.labeled `Blue `Fork "NOO" (string_of_int t.dislikes) `Dislike;
-      Button.labeled `Red `Heart "now" icon `Fetch;
-(*
-      div (List.map (fun x ->
-          Comment.v ~author:x.Post.author [text x.Post.title]
-        ) posts);
-*)
+      Button.labeled
+        ~align:`Left
+        ~label:(Button.Label.v ~color:`Red ~pointing:`Left likes)
+        (Button.v `Like ~color:`Red @@ Icon.v `Heart);
+      Button.labeled
+        ~align:`Left
+        ~label:(Button.Label.v ~color:`Blue ~pointing:`Left dislikes)
+        (Button.v `Dislike ~color:`Blue ~basic:true ~hidden:(Icon.v `Cloud)
+         @@ Icon.v `Fork);
+      Button.v `Fetch ~basic:true ~loading (Icon.v `Facebook);
+      Container.v ~a:[`Left] [
+        Feed.v (List.map (fun x ->
+            let open Feed in
+            { label = img "http://semantic-ui.com/images/avatar/small/justen.jpg"
+            ; summary =
+                { user   = text x.Post.author
+                ; action = "posted on reddit"
+                ; date   = "3 days ago" }
+            ; text = [text x.Post.title]
+            ; meta = Like.v (Random.int 10) }
+          ) posts);
+      ]
     ]
   in
   div [
-    div ~a:[class_ "ui statistic"] [
+    div ~a:[class_ "ui container"] [
       div ~a:[class_ "value"] [text (string_of_int (t.likes - t.dislikes))];
       div ~a:[class_ "label"] [row]
     ]

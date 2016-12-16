@@ -8,7 +8,7 @@ all: server client
 server:
 	jbuilder server.install
 
-client: client/client.byte
+client:
 	jbuilder client.install
 	jbuilder client/client.js
 	browse index.html
@@ -17,6 +17,7 @@ clean:
 	rm -rf _build
 	rm -f client/client.byte
 
-client/client.byte: client/client.ml
-	ocamlfind ocamlc -package ${PACKAGES} -no-check-prims \
-	  -linkpkg -o client/client.byte client/client.ml
+#client/client.byte: client/client.ml
+#	jbuilder client.install
+#	ocamlfind ocamlc -package ${PACKAGES} -no-check-prims \
+#	  -linkpkg -o client/client.byte client/client.ml
