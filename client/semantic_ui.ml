@@ -79,6 +79,7 @@ module Icon = struct
     | `Pause
     | `Shop
     | `Users
+    | `Thumbs of [`Up | `Down]
     | `Colored of Color.t * t
     | `Inverted of t
     | Social.t
@@ -95,6 +96,8 @@ module Icon = struct
     | `Pause -> "pause"
     | `Shop  -> "shop"
     | `Users -> "users"
+    | `Thumbs `Down -> "thumbs outline down"
+    | `Thumbs `Up   -> "thumbs outline up"
     | `Colored (c, t) -> Color.str c ^ " " ^ str t
     | `Inverted t -> "inverted " ^ str t
     | #Social.t as s -> Social.str s
@@ -163,7 +166,6 @@ module Button = struct
     in
     let all = animated @ color @ basic @ kind @ loading @ state in
     elt "button" ~a:[class_ (list "ui button" all);
-                     str_prop "tabindex" "0";
                      onclick msg]
       body
 
@@ -230,7 +232,7 @@ module Container = struct
     | `Fluid      -> "fluid"
 
   let v ?(a=[]) body =
-    let c = list "ui container" (List.map attributes a) in
+    let c = list "ui main container" (List.map attributes a) in
     div ~a:[class_ c] body
 
 end
@@ -273,5 +275,27 @@ module Feed = struct
     ]
 
   let v events = div ~a:[class_ "ui feed"] (List.map event events)
+
+end
+
+module Menu = struct
+
+  let fixed ?(inverted=false) ~logo items =
+    let inverted = if inverted then ["inverted"] else [] in
+    div ~a:[class_ (list "ui fixed menu" inverted); style "z-index" "10"] (
+      div ~a:[class_ "item"] [img logo]
+      :: List.map (fun i -> elt "a" ~a:[class_ "item"] [i]) items
+    )
+
+  let footer ?(inverted=false) ?(vertical=false) body =
+    let inverted = if inverted then ["inverted"] else [] in
+    let vertical = if vertical then ["vertical"] else [] in
+    div ~a:[class_ (list "ui footer segment menu" @@ inverted @ vertical)] body
+
+end
+
+module Segment = struct
+
+  let v body = div ~a:[class_ "ui segment"] body
 
 end
