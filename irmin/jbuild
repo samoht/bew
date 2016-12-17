@@ -1,0 +1,16 @@
+(executables
+ ((names (irmin_client))
+  (libraries   (gen_js_api ocaml-vdom jsont.jsoo irmin irmin.http cohttp.js))
+  (flags (:standard -no-check-prims))
+  (preprocess  no_preprocessing)
+))
+
+(rule
+  ((targets (irmin.js))
+   (deps (irmin_client.bc))
+   (action "js_of_ocaml --debug-info --pretty \
+               +gen_js_api/ojs_runtime.js \
+               +weak.js \
+               +bin_prot.js \
+               +cstruct/cstruct.js \
+               irmin_client.bc -o irmin.js")))

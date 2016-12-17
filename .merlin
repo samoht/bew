@@ -1,4 +1,4 @@
-PKG ocaml-vdom websocket ezjsonm jsont.jsoo
+PKG ocaml-vdom websocket ezjsonm jsont.jsoo irmin irmin.http
 S client/
 S server/
 B _build/**

@@ -1,3 +1,4 @@
+CLIENT=irmin
 PACKAGES=ocaml-vdom,jsont.jsoo
 
 .PHONY: all client server
@@ -9,14 +10,14 @@ server:
 	jbuilder server.install
 
 client:
-	jbuilder client.install
-	jbuilder client/client.js
-	cp _build/default/client/client.js docs/
+	jbuilder ${CLIENT}.install
+	jbuilder ${CLIENT}/${CLIENT}.js
+	cp _build/default/${CLIENT}/${CLIENT}.js docs/client.js
 	browse docs/index.html
 
 clean:
 	rm -rf _build
-	rm -f client/client.byte
+	rm -f docs/client.js
 
 #client/client.byte: client/client.ml
 #	jbuilder client.install
