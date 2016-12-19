@@ -114,7 +114,7 @@ let update t = function
   | `Dislike -> return { t with dislikes = t.dislikes + 1 }
   | `Fetch   ->
     return { t with elts = `Loading } ~c:[
-      XHR.http_get ~url:"http://www.reddit.com/r/ocaml.json" ~payload:""
+      XHR.http_get ~url:"https://www.reddit.com/r/ocaml.json" ~payload:""
         (fun r -> `Fetched r)
     ]
   | `Fetched json ->

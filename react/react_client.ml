@@ -111,7 +111,7 @@ let init = { likes = Counter.v (); dislikes = Counter.v (); elts = XHR.v () }
 let update t = function
   | `Like    -> Counter.incr t.likes
   | `Dislike -> Counter.incr t.dislikes
-  | `Fetch   -> XHR.get t.elts "http://www.reddit.com/r/ocaml.json" Posts.of_str
+  | `Fetch   -> XHR.get t.elts "https://www.reddit.com/r/ocaml.json" Posts.of_str
 
 let onclick t x _ev = update t x; true
 
