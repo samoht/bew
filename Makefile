@@ -1,19 +1,32 @@
-CLIENT=irmin
+CLIENT=react
 PACKAGES=ocaml-vdom,jsont.jsoo
 
-.PHONY: all client server
+.PHONY: all client server irmin react
 
-all: server client
+all: server $(CLIENT)
 	@
 
 server:
 	jbuilder server.install
 
 client:
-	jbuilder ${CLIENT}.install
-	jbuilder ${CLIENT}/${CLIENT}.js
-	cp _build/default/${CLIENT}/${CLIENT}.js docs/client.js
+	jbuilder client.install
+	jbuilder client/client.js
+	cp _build/default/client/client.js docs/client.js
 	browse docs/index.html
+
+irmin:
+	jbuilder irmin.install
+	jbuilder irmin/irmin.js
+	cp _build/default/irmin/irmin.js docs/client.js
+	browse docs/index.html
+
+react:
+	jbuilder react.install
+	jbuilder react/react.js
+	cp _build/default/react/react.js docs/client.js
+	browse docs/index.html
+
 
 clean:
 	rm -rf _build

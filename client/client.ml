@@ -173,9 +173,10 @@ let view t: msg Vdom.vdom =
       ];
 
       Container.v ~a:[`Text] [
-        Feed.v (List.map (fun x ->
+        Feed.v (List.mapi (fun i x ->
             let open Feed in
-            { label = img "http://semantic-ui.com/images/avatar/small/justen.jpg"
+            { id = i
+            ; label = img "http://semantic-ui.com/images/avatar/small/justen.jpg"
             ; summary =
                 { user   = text x.Post.author
                 ; action = "posted on reddit"

@@ -8,4 +8,4 @@
 (rule
   ((targets (client.js))
    (deps (client.bc))
-   (action "js_of_ocaml --source-map --source-map-inline +gen_js_api/ojs_runtime.js client.bc -o client.js")))
+   (action "js_of_ocaml +gen_js_api/ojs_runtime.js client.bc -o client.js")))

@@ -1,0 +1,11 @@
+(executables
+ ((names (react_client))
+  (libraries   (js_of_ocaml js_of_ocaml.tyxml reactiveData jsont.jsoo))
+  (flags (:standard -no-check-prims))
+  (preprocess (pps (js_of_ocaml.ppx.driver)))
+))
+
+(rule
+  ((targets (react.js))
+   (deps (react_client.bc))
+   (action "js_of_ocaml +weak.js react_client.bc -o react.js")))

@@ -1,4 +1,6 @@
-open Vdom
+open Tyxml_js.Html5
+module R = Tyxml_js.R.Html5
+module RL = ReactiveData.RList
 
 let list h x = String.concat " " (h :: x)
 
@@ -6,8 +8,9 @@ let (++) x f = match x with
   | None   -> []
   | Some k -> [f k]
 
-(* FIXME: implement tyxml over vdom *)
-let img src = elt "img" ~a:[str_prop "src" src] []
+let (+++) x f = match x with
+  | None   -> []
+  | Some k -> f k
 
 module Color = struct
 
@@ -102,28 +105,48 @@ module Icon = struct
     | `Inverted t -> "inverted " ^ str t
     | #Social.t as s -> Social.str s
 
-  let v t = elt "i" ~a:[class_ (list "icon" [str t])] []
-  let circular t = elt "i" ~a:[class_ (list "circular icon" [str t])] []
+  let v t = i ~a:[a_class ["icon"; str t]] []
+  let circular t = i ~a:[a_class ["circular"; "icon"; str t]] []
 
 end
 
 
 module Like = struct
 
-  let v n = elt "a" ~a:[class_ "like"] [
+  let v n = div ~a:[a_class ["like"]] [
       Icon.v `Like;
-      text (string_of_int n);
-      text (if n > 1 then " Likes" else " Like");
+      pcdata (string_of_int n);
+      pcdata (if n > 1 then " Likes" else " Like");
     ]
 end
 
 module Statistic = struct
 
   let v ~value ~label =
-    div ~a:[class_ "ui statistic"] [
-      div ~a:[class_ "value"] value;
-      div ~a:[class_ "label"] label;
+    div ~a:[a_class ["ui"; "statistic"]] [
+      div ~a:[a_class ["value"]] value;
+      div ~a:[a_class ["label"]] label;
     ]
+
+end
+
+
+module Label = struct
+
+  type pointing = [
+    | `Left
+    | `Right
+  ]
+
+  let pointing_str = function
+    | `Left  -> ["left"; "pointing"]
+    | `Right -> ["right"; "pointing"]
+
+  let v ?color ?pointing body =
+    let color = color ++ Color.str in
+    let pointing = pointing +++ pointing_str in
+    let all = ["ui"; "basic"; "label"] @ color @ pointing in
+    a ~a:[a_class all] [body]
 
 end
 
@@ -151,35 +174,25 @@ module Button = struct
     | `Active    -> "active"
     | `Disabled  -> "disabled"
 
-  let v ?color ?(basic=false) ?kind ?hidden ?(loading=false) ?state msg body =
+  let v ?color ?(basic=false) ?kind ?hidden ?(loading=React.S.const false) ?state msg body =
     let color = color ++ Color.str in
     let basic = if basic then ["basic"] else [] in
     let kind = kind ++ kind_str in
     let animated = match hidden with None -> [] | Some _ -> ["animated"] in
-    let loading = if loading then ["loading"] else [] in
     let state = state ++ state_str in
     let body = match hidden with
       | None        -> body
       | Some hidden ->
-        [div ~a:[class_ "visible content"] body;
-         div ~a:[class_ "hidden content"] hidden]
+        [div ~a:[a_class ["visible"; "content"]] body;
+         div ~a:[a_class ["hidden"; "content"]] hidden]
     in
-    let all = animated @ color @ basic @ kind @ loading @ state in
-    elt "button" ~a:[class_ (list "ui button" all);
-                     onclick msg]
-      body
-
-  module Label = struct
-
-    let v ?color ?pointing body =
-      let color = color ++ Color.str in
-      let pointing = pointing ++ function
-          | `Left  -> "left pointing"
-          | `Right -> "right pointing"
-      in
-      elt "a" ~a:[class_ (list "ui basic label" (color @ pointing))] [body]
-
-  end
+    let all = "ui" :: "button" :: animated @ color @ basic @ kind @ state in
+    let all =
+      React.S.map (fun loading ->
+          if loading then "loading" :: all else all
+        ) loading
+    in
+    div ~a:[R.a_class all; a_tabindex 0; a_onclick msg] body
 
   type align = [ `Left | `Right ]
 
@@ -187,26 +200,26 @@ module Button = struct
 
   let labeled ?align ?pointing ~label body =
     let align = align ++ align_str in
-    div ~a:[class_ (list "ui labeled button" align)] [ body; label ]
+    let pointing = pointing +++ Label.pointing_str in
+    let all = [ "ui"; "labeled"; "button"] @ align @ pointing in
+    div ~a:[a_class all] [ body; label ]
 
-  let icon t = elt "button" ~a:[class_ "ui icon button"] [Icon.v t]
+  let icon t = button ~a:[a_class ["ui"; "icon"; "button"]] [Icon.v t]
 
   let labeled_icon ?align ~icon msg body =
     let align = align ++ align_str in
-    div ~a:[class_ (list "ui labeled icon button" align);
-            str_prop "tabindex" "0";
-            onclick msg] [
+    let all = ["ui"; "labeled"; "icon"; "button"] @ align in
+    div ~a:[a_class all; a_tabindex 0; a_onclick msg] [
       Icon.v icon;
       body;
     ]
 
-  let buttons l = div ~a:[class_ "ui buttons"] l
+  let buttons l = div ~a:[a_class ["ui"; "buttons"]] l
 
   let social ?(circular=false) msg s text =
     let circular = if circular then ["circular"] else [] in
-    elt "button" ~a:[class_ (list "ui button" @@ Social.str s :: circular);
-                     str_prop "tabindex" "0";
-                     onclick msg] [
+    let all = "ui" :: "button" :: Social.str s :: circular in
+    button ~a:[a_class all; a_tabindex 0; a_onclick msg] [
       Icon.v (s :> Icon.t);
       text
     ]
@@ -231,53 +244,50 @@ module Container = struct
     | `Justified  -> "justified"
     | `Fluid      -> "fluid"
 
-  let v ?(a=[]) body =
-    let c = list "ui main container" (List.map attributes a) in
-    div ~a:[class_ c] body
+  let v ?(align=[]) body =
+    let all = "ui" :: "main" :: "container" :: List.map attributes align in
+    div ~a:[a_class all] body
 
 end
 
 module Feed = struct
 
   type 'a summary = {
-    user  : 'a Vdom.vdom;
+    user  : 'a elt;
     action: string;
     date  : string;
   }
 
   let summary { user; action; date } =
-    div ~a:[class_ "summary"] [
-      elt "a" ~a:[class_ "user"] [user];
-      text " ";
-      text action;
-      div ~a:[class_ "date"] [text date];
+    div ~a:[a_class ["summary"]] [
+      a ~a:[a_class ["user"]] [user];
+      pcdata " ";
+      pcdata action;
+      div ~a:[a_class ["date"]] [pcdata date];
     ]
 
-  type 'a meta = { meta: 'a Vdom.vdom }
-
-  let meta { meta } = div ~a:[class_ "meta"] [meta]
+  let meta m = div ~a:[a_class ["meta"]] [m]
 
   type 'a event = {
-    id     : int;
-    label  : 'a Vdom.vdom;
+    label  : 'a elt;
     summary: 'a summary;
-    text   : 'a Vdom.vdom list;
-    meta   : 'a Vdom.vdom;
+    text   : 'a elt list;
+    meta   : 'a elt;
   }
 
   let event t =
     let text = match t.text with
-      | [] -> [meta {meta = t.meta}]
-      | b  -> [div ~a:[class_ "extra text"] b; meta {meta = t.meta}]
+      | [] -> [meta t.meta]
+      | b  -> [div ~a:[a_class ["extra"; "text"]] b; meta t.meta]
     in
-    div ~a:[class_ "event"] [
-      div ~a:[class_ "label"] [t.label];
-      div ~a:[class_ "content"] (summary t.summary :: text)
+    div ~a:[a_class ["event"]] [
+      div ~a:[a_class ["label"]] [t.label];
+      div ~a:[a_class ["content"]] (summary t.summary :: text)
     ]
 
-  let memo_event e = memo ~key:(string_of_int e.id) event e
-
-  let v events = div ~a:[class_ "ui feed"] (List.map memo_event events)
+  let v events =
+    R.div ~a:[a_class ["ui"; "feed"]]
+      (RL.from_signal @@ React.S.map (List.map event) events)
 
 end
 
@@ -285,20 +295,29 @@ module Menu = struct
 
   let fixed ?(inverted=false) ~logo items =
     let inverted = if inverted then ["inverted"] else [] in
-    div ~a:[class_ (list "ui fixed menu" inverted); style "z-index" "10"] (
-      div ~a:[class_ "item"] [img logo]
-      :: List.map (fun i -> elt "a" ~a:[class_ "item"] [i]) items
+    let all = "ui" :: "fixed" :: "menu" :: inverted in
+    div ~a:[a_class all; a_style "z-index:10"] (
+      div ~a:[a_class ["item"]] [img ~src:logo ~alt:"logo" ()]
+      :: List.map (fun i -> a ~a:[a_class ["item"]] [i]) items
     )
 
   let footer ?(inverted=false) ?(vertical=false) body =
     let inverted = if inverted then ["inverted"] else [] in
     let vertical = if vertical then ["vertical"] else [] in
-    div ~a:[class_ (list "ui footer segment menu" @@ inverted @ vertical)] body
+    let all = "ui" :: "footer" :: "segment" :: "menu" :: inverted @ vertical in
+    div ~a:[a_class all] body
+
+end
+
+module Divider = struct
+
+  let v = div ~a:[a_class ["ui"; "divider"]] []
+  let horizontal elt = div ~a:[a_class ["ui"; "horizontal"; "divider"]] [elt];
 
 end
 
 module Segment = struct
 
-  let v body = div ~a:[class_ "ui segment"] body
+  let v body = div ~a:[a_class ["ui"; "segment"]] body
 
 end

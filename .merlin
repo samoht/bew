@@ -1,4 +1,5 @@
-PKG ocaml-vdom websocket ezjsonm jsont.jsoo irmin irmin.http
-S client/
+PKG ocaml-vdom websocket ezjsonm jsont.jsoo irmin irmin.http react
+PKG js_of_ocaml.tyxml js_of_ocaml.ppx
+S react/
 S server/
 B _build/**
